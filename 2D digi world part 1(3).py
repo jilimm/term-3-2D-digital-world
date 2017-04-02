@@ -6,14 +6,6 @@ RYAN TEO
 KOH JING YU
 LIANG CHENYOU
 '''
-'''
-16 f09 2D digi world part 1 submission GROUP 6
-LIM JING YUN
-WU YUFEI
-RYAN TEO
-KOH JING YU
-LIANG CHENYOU
-'''
 
 import libdw.sm as sm
 import RPi.GPIO as GPIO
@@ -41,7 +33,7 @@ GPIO.output(en, GPIO.HIGH)
 p1 = GPIO.PWM(in1pin, 300)
 #freqeuncy value obtained through experiments with water pump
 
-#temperature code copied from online. This uses the probe to read temperature
+#temperature code copied from online. This uses the probe to measure surrounding temperature
 os.system('modprobe w1-gpio')
 os.system('modprobe w1-therm')
 
@@ -75,7 +67,7 @@ class WaterPumpSM(sm.SM):
     startState=0
     def getNextValues(self, currentState, inp):
         if inp<=target:
-# if temperature sensed is higher than target then it will go to state 1 whose output will casue the pump to go at 100% power
+# state machine will change state depending on temperature sensed. State0 corresponds to stopping pump. State 1 corresponds to putting pump to 100% 
             outp=(0.0, 0.0)
             #tuple output of (0.0, 0.0) will make pump stop
             nextState=0 
@@ -83,7 +75,6 @@ class WaterPumpSM(sm.SM):
             outp=(1.0, 1.0)
             #this tuple output will be used to make the pump go at 100%power
             nextState = 1
-# if temperature sensed is higher than target then it will go to state 1 whose output will casue the pump to go at 100% power
         return (nextState, outp)
         #the state machine will output a tuple
     
