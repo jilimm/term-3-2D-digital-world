@@ -15,23 +15,25 @@ import time
 
 GPIO.setmode(GPIO.BCM)
 
+#naming the pins we connected to in our set up 
+
 in2pin = 5
 in1pin = 17
 en = 18
 
-target=30
 #target temp is 30
+target=30
 
+#set all pins connected to the IR to be out. Becuase everything is coming out of the rapsberry pi
 GPIO.setup(en, GPIO.OUT)
 GPIO.setup(in2pin, GPIO.OUT)
-GPIO.setup(in1pin, GPIO.OUT)
-#set all pins connected to the IR to be out. Becuase everything is coming out of the rapsberry pi 
+GPIO.setup(in1pin, GPIO.OUT) 
 
-GPIO.output(en, GPIO.HIGH)
 #set en to be high so it can receive stuff from the rtaspberry pi
+GPIO.output(en, GPIO.HIGH)
 
-p1 = GPIO.PWM(in1pin, 300)
 #freqeuncy value obtained through experiments with water pump
+p1 = GPIO.PWM(in1pin, 300)
 
 #temperature code copied from online. This uses the probe to measure surrounding temperature
 os.system('modprobe w1-gpio')
@@ -58,44 +60,47 @@ def read_temp():
         temp_string = lines[1][equals_pos+2:]
         temp_c = float(temp_string) / 1000.0
         temp_f = temp_c * 9.0 / 5.0 + 32.0
+# output is changed to only temp_c becuase we are only concerned with temperature in degrees Celsius. 
         return temp_c
-# we changed the output to just temp_c so it only returns temperature in terms of degrees Celcius. becuase we dont need temperature in temrs of farenheit
-
-
 #this is the state machine required of us by the 2D project. 
 class WaterPumpSM(sm.SM):
     startState=0
     def getNextValues(self, currentState, inp):
-        if inp<=target:
 # state machine will change state depending on temperature sensed. State0 corresponds to stopping pump. State 1 corresponds to putting pump to 100% 
+        if inp<=target:
+            #tuple output of (0.0, 0.0) will be used to make pump stop
             outp=(0.0, 0.0)
-            #tuple output of (0.0, 0.0) will make pump stop
             nextState=0 
         else:
+            #tuple output of (1.0, 1.0) will be used to make poump go at 100% power
             outp=(1.0, 1.0)
-            #this tuple output will be used to make the pump go at 100%power
             nextState = 1
+        #the state machine will output a tuple    
         return (nextState, outp)
-        #the state machine will output a tuple
+        
     
 ###Enter fan code here when physical world provides a fan###
+
+
 
 waterPumpControl=WaterPumpSM()
 #start the state machine
 waterPumpControl.start()
-#start the water pump. DC here is 0 because we are 
+#start the water pump. DC here is 0 because we are not sure of the input temperature
 p1.start(0)
 
 #while loop below continously reads temperature of surrounding and actuates pump based on input temperature
 while True:
     PumpPower, FanPower = waterPumpControl.step(read_temp())
     p1.ChangeDutyCycle(PumpPower*100)
+    #pause for 1 second to let the pump run before it gets a new instruction. 
     time.sleep(1)
 
+# stop pump once we are done
 p1.stop()
-#stop the pump once code exits the while loop
-GPIO.cleanup()
 #clean up the GPIO so you can do other stuff
+GPIO.cleanup()
+
     
     
 
